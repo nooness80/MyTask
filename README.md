@@ -40,5 +40,29 @@ These instructions will help you set up and run the project on your local machin
 
 Before running the project, you need to configure the Django settings to allow your IP address. Open the `settings.py` file and add your IP to the `ALLOWED_HOSTS` list.
 
-```python
-ALLOWED_HOSTS = ['your_ip_address', 'another_ip_address', 'localhost']
+    ```python
+    ALLOWED_HOSTS = ['your_ip_address', 'another_ip_address', 'localhost']
+    ```
+
+## Usage
+
+Once the Docker containers are up and running, you can access the web application at [http://localhost:8000](http://localhost:8000).
+
+### Project Details
+
+- **Django**: The web framework used for developing the application.
+- **Docker**: Containerization tool for easy deployment.
+- **Celery**: Used for asynchronous task processing.
+- **Redis**: Used for real-time updates on the number of images downloaded.
+- **PostgreSQL**: The database used for storing data.
+- **Gunicorn**: WSGI HTTP Server for serving the Django application.
+
+## Telegram Bot
+
+You can interact with the project using the Telegram bot. The bot provides the following commands:
+
+- **/scrape**: Enter a string to search on Google Images and specify the number of images to download.
+  - Example: `/scrape cats 5` will search for "cats" on Google Images and download 5 images.
+- **/export_db**: View the contents of the PostgreSQL database.
+
+Thank you for checking out our project! If you have any questions or need further assistance, feel free to reach out.
