@@ -1,0 +1,25 @@
+FROM python:3.11
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    unzip \
+    libnss3 \
+    libgconf-2-4 \
+    chromium \
+    chromium-driver
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the current directory contents into the container at /app
+COPY . /app
+
+# Install any needed packages specified in requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Define environment variables
+ENV PYTHONUNBUFFERED=1
+
+# Run the Celery worker
+CMD ["celery", "-A", "webscraper", "worker", "--loglevel=info"]

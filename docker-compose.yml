@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        DATABASE_URL: ${DATABASE_URL}
+    command: >
+      sh -c "
+      python manage.py migrate &&
+      python manage.py collectstatic --noinput &&
+      gunicorn --workers 3 --bind 0.0.0.0:8000 webscraper.wsgi:application
+      "
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - db
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DATABASE_URL=${DATABASE_URL}
+    networks:
+      - my_network
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile.celery
+      args:
+        DATABASE_URL: ${DATABASE_URL}
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - db
+    entrypoint: ["/app/wait-for-it.sh", "redis:6379", "--", "celery", "-A", "webscraper", "worker", "--loglevel=info"]
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DATABASE_URL=${DATABASE_URL}
+    networks:
+      - my_network
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+      args:
+        DATABASE_URL: ${DATABASE_URL}
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - db
+    environment:
+      - SCRAPE_IMAGES_URL=http://103.75.199.31:8000/scrape_images/
+      - DATABASE_URL=${DATABASE_URL}
+    networks:
+      - my_network
+
+  redis:
+    image: redis:alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - my_network
+
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST_AUTH_METHOD=${POSTGRES_HOST_AUTH_METHOD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - my_network
+
+networks:
+  my_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
